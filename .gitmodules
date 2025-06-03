@@ -1,0 +1,6 @@
+[submodule "DesignDoc"]
+	path = DesignDoc
+	url = https://github.com/telepan/DesignDoc.git
+[submodule "penny_switch"]
+	path = penny_switch
+	url = https://github.com/telepan/penny_switch.git
