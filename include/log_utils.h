@@ -22,8 +22,14 @@ Q_STATIC_ASSERT_X(sizeof(LogManagerParam) == 4, "LogManagerParam size must be 4 
 
 extern bool checkLogLevel(ELogLevel level);
 
-#define LOG_ALL qDebug()
-#define LOG_DEBUG qDebug()
+#define LOG_ALL                           \
+    if (!checkLogLevel(ELogLevel::Debug)) \
+        (void)0;                          \
+    else                                  \
+        qDebug()
+
+#define LOG_DEBUG LOG_ALL
+
 
 #define LOG_INFO                         \
     if (!checkLogLevel(ELogLevel::Info)) \

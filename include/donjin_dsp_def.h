@@ -71,7 +71,7 @@ struct ITP_GUID_STRUCT
     uint8_t m_u8SubFuncId;  // Sub-function ID
     uint8_t m_u8UnitId;     // Unit ID
     uint16_t m_u16ChanId;   // Channel ID
-    uint16_t m_u16Reserve;  // 保留字段
+    uint16_t m_u16Reserve;  // 保留字段 :和DONJIN源码区别该保留字段在结构的下面不是里面
 };
 
 typedef struct
@@ -471,15 +471,25 @@ typedef ITP_SearchDspPacket ITP_SetDspPacket;
 #define ITP_MAX_RESOURCE_NUMBER 128
 
 #define ITP_MAX_RES_LIST_LENGTH 16
-typedef struct
+struct ITP_Res_Cap_List
 {
+    static constexpr uint16_t staticGetDataLen(uint16_t resListLength)
+    {
+        Q_ASSERT(resListLength <= ITP_MAX_RES_LIST_LENGTH);
+        return sizeof(ITP_Res_Cap_List) - (ITP_MAX_RES_LIST_LENGTH - resListLength) * sizeof(ITP_Res_Cap);
+    }
+    bool checkLen(uint16_t dataLen) const
+    {
+        return getDataLen() == dataLen;
+    }
+    uint16_t getDataLen() const
+    {
+        return staticGetDataLen(m_u16Res_List_Length);
+    }
     uint16_t m_u16Res_List_Length; /*说明后面跟了多少项资源数量定义*/
     uint16_t m_u16Reserved;        /*保留*/
     ITP_Res_Cap m_ITP_resource_capacity[ITP_MAX_RES_LIST_LENGTH];
-} ITP_Res_Cap_List;
-
-#define ITP_Res_Cap_List_Len(list) \
-    (sizeof(list) - sizeof(list.m_ITP_resource_capacity) + list.m_u16Res_List_Length * sizeof(ITP_Res_Cap))
+};
 
 #define ITP_MAX_RESOURCE_NUMBER_EIC 32
 #define ITP_MAX_RESCH_NUM 256
@@ -506,7 +516,7 @@ typedef struct
 struct GYDef_ITP_Res
 {
     bool checkLen(uint16_t dataLen) const { return getDataLen() == dataLen; }
-    uint16_t getDataLen() const { return sizeof(ITP_Res_Cap_Head) + ITP_Res_Cap_List_Len(list); }
+    uint16_t getDataLen() const { return sizeof(head) + list.getDataLen(); }
     ITP_Res_Cap_Head head;
     ITP_Res_Cap_List list;
 };
@@ -1020,41 +1030,46 @@ typedef struct
 #define VOIP_RTP_PARAM_ENCRYPT 3
 #define VOIP_RTP_PARAM_DECRYPT 4
 #define VOIP_RTP_PARAM_AUDIO_SSRC 5
-#define VOIP_RTP_PARAM_OUTPUT_VAD 6  // 2011.12.6 added
+#define VOIP_RTP_PARAM_OUTPUT_VAD 6 // 2011.12.6 added
 #define VOIP_RTP_PARAM_G711 7
 
-typedef struct VOIP_OUTPUT_VAD_PARAM_TAG {
+typedef struct VOIP_OUTPUT_VAD_PARAM_TAG
+{
     quint8 enable;
     quint8 rfu;
-    quint16 active_tail_length;  //*5ms
+    quint16 active_tail_length; //*5ms
 } VOIP_OUTPUT_VAD_PARAM;
 
-typedef struct VOIP_JITTER_PARAM_TAG {  // 针对dsp
-    quint16 jitter_mode;                // jitter buffer mode (0 - static, 1 - adaptive)
-    quint16 jitter_time;                // jitter buffer size in milli-seconds (static mode)
+typedef struct VOIP_JITTER_PARAM_TAG
+{                        // 针对dsp
+    quint16 jitter_mode; // jitter buffer mode (0 - static, 1 - adaptive)
+    quint16 jitter_time; // jitter buffer size in milli-seconds (static mode)
 } VOIP_JITTER_PARAM;
 
-typedef struct VOIP_ENCRYPT_PARAM_TAG  // 针对通道
+typedef struct VOIP_ENCRYPT_PARAM_TAG // 针对通道
 {
     quint8 enable;
     quint8 rfu[3];
     quint8 key[8];
 } VOIP_ENCRYPT_PARAM;
 
-typedef struct AUDIO_SSRC_SET_TAG {
+typedef struct AUDIO_SSRC_SET_TAG
+{
     quint32 ssrc;
     quint32 reserved;
 } AUDIO_SSRC_SET;
 
-typedef struct RTP_PARAM_TAG {
+typedef struct RTP_PARAM_TAG
+{
     quint8 type;
     quint8 rfu[3];
-    union PARAM_TAG {
+    union PARAM_TAG
+    {
         VOIP_JITTER_PARAM jitter;
         VOIP_G729_PARAM g729;
         VOIP_ENCRYPT_PARAM encrypt;
-        AUDIO_SSRC_SET audio_ssrc;        // add by zcq at 20111109
-        VOIP_OUTPUT_VAD_PARAM outputVad;  // add by lyp at 2011.12.6
+        AUDIO_SSRC_SET audio_ssrc;       // add by zcq at 20111109
+        VOIP_OUTPUT_VAD_PARAM outputVad; // add by lyp at 2011.12.6
         VOIP_G711_PARAM g711;
     } param;
 } RTP_PARAM;
